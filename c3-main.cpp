@@ -134,27 +134,26 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 
 Eigen::Matrix4d NDT(PointCloudT::Ptr mapCloud, PointCloudT::Ptr source, Pose startPose, int iterations)
 {
-    
-  Eigen::Matrix4f init_guess = transform3D(startPose.rotation.yaw, startPose.rotation.pitch, startPose.rotation.roll, startPose.position.x, startPose.position.y, startPose.position.z).cast<float>();
+    Eigen::Matrix4f init_guess = transform3D(startPose.rotation.yaw, startPose.rotation.pitch, startPose.rotation.roll, startPose.position.x, startPose.position.y, startPose.position.z).cast<float>();
   
   //set the parameters of ndt
-  pcl::NormalDistributionsTransform<PointT,PointT> ndt;
+  	pcl::NormalDistributionsTransform<PointT,PointT> ndt;
   
-  ndt.setMaximumIterations(iterations);
-  ndt.setTransformationEpsilon(1e-3);
-  //ndt.setStepSize(1);
-  ndt.setResolution(5);
-  ndt.setInputSource(source);
-  ndt.setInputTarget(mapCloud);
+  	ndt.setMaximumIterations(iterations);
+  	ndt.setTransformationEpsilon(1e-3);
+  	//ndt.setStepSize(1);
+  	ndt.setResolution(5);
+  	ndt.setInputSource(source);
+  	ndt.setInputTarget(mapCloud);
   
-  PointCloudT::Ptr ndt_cloud (new PointCloudT);
-  ndt.align(*ndt_cloud, init_guess);
+  	PointCloudT::Ptr ndt_cloud (new PointCloudT);
+  	ndt.align(*ndt_cloud, init_guess);
   
-  //get the final transformation
-  Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation().cast<double>();
-  //transformation_matrix =  transformation_matrix * init_guess.cast<double>();
+  	//get the final transformation
+  	Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation().cast<double>();
+  	//transformation_matrix =  transformation_matrix * init_guess.cast<double>();
   
-  return transformation_matrix;
+  	return transformation_matrix;
   
 }
 
@@ -175,9 +174,9 @@ int main(){
 	auto lidar_bp = *(blueprint_library->Find("sensor.lidar.ray_cast"));
 	// CANDO: Can modify lidar values to get different scan resolutions
 	lidar_bp.SetAttribute("upper_fov", "15");
-    lidar_bp.SetAttribute("lower_fov", "-25");
-    lidar_bp.SetAttribute("channels", "32");
-    lidar_bp.SetAttribute("range", "30");
+	lidar_bp.SetAttribute("lower_fov", "-25");
+	lidar_bp.SetAttribute("channels", "32");
+	lidar_bp.SetAttribute("range", "30");
 	lidar_bp.SetAttribute("rotation_frequency", "60");
 	lidar_bp.SetAttribute("points_per_second", "500000");
 
@@ -189,7 +188,7 @@ int main(){
 	std::chrono::time_point<std::chrono::system_clock> lastScanTime, startTime;
 
 	pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  	viewer->setBackgroundColor (0, 0, 0);
+	viewer->setBackgroundColor (0, 0, 0);
 	viewer->registerKeyboardCallback(keyboardEventOccurred, (void*)&viewer);
 
 	auto vehicle = boost::static_pointer_cast<cc::Vehicle>(ego_actor);
@@ -260,7 +259,7 @@ int main(){
 			
 			new_scan = true;
 			// TODO: (Filter scan using voxel filter)
-            pcl::VoxelGrid<PointT> vg;
+			pcl::VoxelGrid<PointT> vg;
 			vg.setInputCloud(scanCloud);
 			double filterRes = 1.0;
 			vg.setLeafSize(filterRes, filterRes, filterRes);
@@ -268,16 +267,18 @@ int main(){
 
 			// TODO: Find pose transform by using ICP or NDT matching
 			//pose = ....
-          	//Eigen::Matrix4d transform = ICP(mapCloud, cloudFiltered, pose, 30);// For ICP
-          	Eigen::Matrix4d transform = NDT(mapCloud, cloudFiltered, pose, 100);
+			//Eigen::Matrix4d transform = ICP(mapCloud, cloudFiltered, pose, 30);// For ICP
+			Eigen::Matrix4d transform = NDT(mapCloud, cloudFiltered, pose, 100);
+          
+			pose = getPose(transform);
           	
-          	pose = getPose(transform);
           	// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 
 			viewer->removePointCloud("scan");
 			// TODO: Change `scanCloud` below to your transformed scan
           
-          	pcl::transformPointCloud(*cloudFiltered, *scanCloud, transform);
+			PointCloudT::Ptr scanCloud(new PointCloudT);
+			pcl::transformPointCloud(*cloudFiltered, *scanCloud, transform);
 			renderPointCloud(viewer, scanCloud, "scan", Color(1,0,0) );
 
 			viewer->removeAllShapes();
