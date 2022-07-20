@@ -92,51 +92,51 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 
 	BoxQ box;
 	box.bboxTransform = Eigen::Vector3f(pose.position.x, pose.position.y, 0);
-    box.bboxQuaternion = getQuaternion(pose.rotation.yaw);
-    box.cube_length = 4;
-    box.cube_width = 2;
-    box.cube_height = 2;
+        box.bboxQuaternion = getQuaternion(pose.rotation.yaw);
+        box.cube_length = 4;
+        box.cube_width = 2;
+        box.cube_height = 2;
 	renderBox(viewer, box, num, color, alpha);
 }
 
 Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations){
 
   	//Defining a rotation matrix and translation vector
-    Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
+    	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
 
-    // align source with starting pose
-    Eigen::Matrix4d initTransform = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, startingPose.rotation.roll, startingPose.position.x, startingPose.position.y, startingPose.position.z);
-    PointCloudT::Ptr transformSource (new PointCloudT); 
-    pcl::transformPointCloud (*source, *transformSource, initTransform);
-    
-    pcl::IterativeClosestPoint<PointT, PointT> icp;
-    icp.setMaximumIterations (iterations);
-    icp.setInputSource (transformSource);
-    icp.setInputTarget (target);
-    icp.setMaxCorrespondenceDistance (2);
+	// align source with starting pose
+	Eigen::Matrix4d initTransform = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, startingPose.rotation.roll, startingPose.position.x, startingPose.position.y, startingPose.position.z);
+	PointCloudT::Ptr transformSource (new PointCloudT); 
+	pcl::transformPointCloud (*source, *transformSource, initTransform);
 
-    PointCloudT::Ptr cloud_icp (new PointCloudT);  // ICP output point cloud
-    icp.align (*cloud_icp);
-      
+	pcl::IterativeClosestPoint<PointT, PointT> icp;
+	icp.setMaximumIterations (iterations);
+	icp.setInputSource (transformSource);
+	icp.setInputTarget (target);
+	icp.setMaxCorrespondenceDistance (2);
 
-    if (icp.hasConverged ())
-    {
-        transformation_matrix = icp.getFinalTransformation ().cast<double>();
-        transformation_matrix =  transformation_matrix * initTransform;
-         
-        return transformation_matrix;
-    }
-    else
-        cout << "WARNING: ICP did not converge" << endl;
-    return transformation_matrix;
+	PointCloudT::Ptr cloud_icp (new PointCloudT);  // ICP output point cloud
+	icp.align (*cloud_icp);
+
+
+	if (icp.hasConverged ())
+	{
+		transformation_matrix = icp.getFinalTransformation ().cast<double>();
+		transformation_matrix =  transformation_matrix * initTransform;
+
+		return transformation_matrix;
+	}
+	else
+		cout << "WARNING: ICP did not converge" << endl;
+	return transformation_matrix;
 
 }
 
 Eigen::Matrix4d NDT(PointCloudT::Ptr mapCloud, PointCloudT::Ptr source, Pose startPose, int iterations)
 {
-    Eigen::Matrix4f init_guess = transform3D(startPose.rotation.yaw, startPose.rotation.pitch, startPose.rotation.roll, startPose.position.x, startPose.position.y, startPose.position.z).cast<float>();
+    	Eigen::Matrix4f init_guess = transform3D(startPose.rotation.yaw, startPose.rotation.pitch, startPose.rotation.roll, startPose.position.x, startPose.position.y, startPose.position.z).cast<float>();
   
-  //set the parameters of ndt
+  	//set the parameters of ndt
   	pcl::NormalDistributionsTransform<PointT,PointT> ndt;
   
   	ndt.setMaximumIterations(iterations);
@@ -272,7 +272,7 @@ int main(){
           
 			pose = getPose(transform);
           	
-          	// TODO: Transform scan so it aligns with ego's actual pose and render that scan
+          		// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 
 			viewer->removePointCloud("scan");
 			// TODO: Change `scanCloud` below to your transformed scan
@@ -284,7 +284,7 @@ int main(){
 			viewer->removeAllShapes();
 			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
           
-          	double poseError = sqrt( (truePose.position.x - pose.position.x) * (truePose.position.x - pose.position.x) + (truePose.position.y - pose.position.y) * (truePose.position.y - pose.position.y) );
+          		double poseError = sqrt( (truePose.position.x - pose.position.x) * (truePose.position.x - pose.position.x) + (truePose.position.y - pose.position.y) * (truePose.position.y - pose.position.y) );
 			if(poseError > maxError)
 				maxError = poseError;
 			double distDriven = sqrt( (truePose.position.x) * (truePose.position.x) + (truePose.position.y) * (truePose.position.y) );
